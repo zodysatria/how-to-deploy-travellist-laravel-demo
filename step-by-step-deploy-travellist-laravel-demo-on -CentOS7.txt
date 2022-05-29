@@ -1,0 +1,94 @@
+step by step deploy travellist laravel
+
+step 1;
+
+installation.
+
+- nginx:latest = web server
+$ yum -y install nginx
+$ systemctl start nginx
+$ systemctl enable nginx
+$ firewall-cmd --add-service=http --permanent
+$ firewall-cmd --add-service=https --permanent
+$ firewall-cmd --reload
+
+- Php-fpm:7.4 = Programming languages
+$ yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm -y
+$ yum install yum-utils
+$ yum-config-manager --enable remi-php74
+$ yum install php php php-mbstring php-pear php-fpm php php-cli php-fpm php-json php-mysql php-zip php-gd php-curl php-xml php-bcmath
+$ systemctl start php-fpm && systemctl enable php-fpm
+$ vi /etc/php-fpm.d/www.conf
+change listen owner&grup on line 48
+listen.owner = nginx
+listen.group = nginx
+listen.mode = 0660
+change unix socket listen on line 38
+listen = /var/run/php-fpm.sock
+systemctl restart php-fpm && systemctl reload php-fpm
+
+- mysql:5.7 = Database
+$ yum -y install centos-release-scl-rh centos-release-scl
+$ yum --enablerepo=centos-sclo-rh -y install rh-mysql57-mysql-server
+$ scl enable rh-mysql57 bash
+$ mysql -V
+$ which mysql
+$ vi /etc/profile.d/rh-mysql57.sh
+# create new
+source /opt/rh/rh-mysql57/enable
+export X_SCLS="`scl enable rh-mysql57 'echo $X_SCLS'`"
+$ vi /etc/opt/rh/rh-mysql57/my.cnf.d/rh-mysql57-mysql-server.cnf
+# add follows within [mysqld] section
+[mysqld]
+character-set-server=utf8
+$ systemctl start rh-mysql57-mysqld
+$ systemctl enable rh-mysql57-mysqld
+$ mysql_secure_installation
+y
+0
+M1r4cLe3&
+y
+y
+y
+y
+$ mysql -u root -p
+mysql> select user,host from mysql.user;
+mysql> show databases;
+mysql> exit
+$ firewall-cmd --add-service=mysql --permanent
+$ firewall-cmd --reload
+
+- install composer:latest = Depedency Manager
+$ php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+$ php composer-setup.php
+$ php -r "unlink('composer-setup.php');"
+$ mv composer.phar /usr/local/bin/composer
+$ composer -v
+
+step 4;
+$ yum -y install git
+$ git clone https://github.com/do-community/travellist-laravel-demo to /var/www/
+
+step 5;
+$ cd /var/www/travellist-laravel-demo
+$ vi /etc/nginx/conf.d/travellist.conf
+$ composer install
+$ composer update
+$ cp .env.example .env
+$ vim .env
+$ php artisan config:cache
+$ php artisan key:generate
+$ mysql -u root -p
+mysql> CREATE DATABASE travellist;
+mysql> show databases;
+mysql> exit
+$ php artisan migrate
+
+step 6;
+- set permission log laravel :
+$ chmod -R 777 bootstrap/cache/
+$ chmod -R 777 storage/
+$ chcon -R -t httpd_sys_rw_content_t storage
+$ chcon -R -t httpd_sys_rw_content_t bootstrap/cache
+- set resolved SQLSTATE[HY000] [2002] Permission denied (SQL: select * from places where visited = 1) ;
+$ sudo setsebool -P httpd_can_network_connect_db=1
