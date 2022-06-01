@@ -17,9 +17,10 @@ __Hardware Reqruitments__ :
 
 __Software__ :
 
-- _Web server nginx_
-- _Programming languages PHP-FPM_
-- _Database Mysql or etc._
+- _Web server **NGINX**_
+- _Programming languages **PHP-FPM**_
+- _Database **MYSQL** or etc_
+- _Depedency Manager **COMPOSER**_
 
 __Enjoy to deploy with learn step by step.__
 --------------------------------------------
